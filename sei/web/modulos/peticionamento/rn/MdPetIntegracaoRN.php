@@ -19,7 +19,8 @@ class MdPetIntegracaoRN extends InfraRN
 
     private function _getIdUf($consulta)
     {
-        $siglaUf = $consulta['PessoaJuridica']['endereco']['uf'] ? $consulta['PessoaJuridica']['endereco']['uf'] : null;
+//        $siglaUf = $consulta['PessoaJuridica']['endereco']['uf'] ? $consulta['PessoaJuridica']['endereco']['uf'] : null;
+		$siglaUf = $consulta['CNPJPerfil']['UF'] ? $consulta['CNPJPerfil']['UF'] : null;
         $idUf = '';
 
         if (!is_null($siglaUf)) {
@@ -41,7 +42,8 @@ class MdPetIntegracaoRN extends InfraRN
         $nomeCidade = '';
         $idUF = '';
         $siglaUF = '';
-        $codigoIbge = $consulta['PessoaJuridica']['endereco']['codigoMunicipio'] ? $consulta['PessoaJuridica']['endereco']['codigoMunicipio'] : null;
+//        $codigoIbge = $consulta['PessoaJuridica']['endereco']['codigoMunicipio'] ? $consulta['PessoaJuridica']['endereco']['codigoMunicipio'] : null;
+        $codigoIbge = $consulta['CNPJPerfil']['CodigoMunicipioIBGE'] ? $consulta['CNPJPerfil']['CodigoMunicipioIBGE'] : null;
         $arrRetorno = array();
 
         if (!is_null($codigoIbge)) {
@@ -160,7 +162,8 @@ class MdPetIntegracaoRN extends InfraRN
 
             if ($siglaContato) {
                 $parametro = [
-                    $strMetodoWebservice => [
+                   // $strMetodoWebservice => [
+                   [
                         'cnpj' => $cnpj,
                         'cpfUsuario' => $cpfUsuarioLogado,
                         $chaveMes => $mes,
@@ -169,7 +172,8 @@ class MdPetIntegracaoRN extends InfraRN
                 ];
             } else {
                 $parametro = [
-                    $strMetodoWebservice => [
+                 //   $strMetodoWebservice => [
+                 [
                         'cnpj' => $cnpj,
                         'cpfUsuario' => $cpfUsuarioLogado,
                         $chaveMes => $mes
@@ -180,7 +184,8 @@ class MdPetIntegracaoRN extends InfraRN
         } else {
 
             $parametro = [
-                $strMetodoWebservice => [
+            //    $strMetodoWebservice => [
+            [
                     'cnpj' => $cnpj,
                     'cpfUsuario' => $cpfUsuarioLogado
                 ]
@@ -190,14 +195,15 @@ class MdPetIntegracaoRN extends InfraRN
 
         $consulta = $objMdPetSoapClienteRN->consultarWsdl($strMetodoWebservice, $parametro);
 
-	    if (!empty($objMdPetIntegracao->getStrCodReceitaSuspAuto()) && in_array(intval($consulta['PessoaJuridica']['situacaoCadastral']['codigo']), explode(',', $objMdPetIntegracao->getStrCodReceitaSuspAuto()))) {
-            $xml .= "<success>false</success>\n";
+	    // if (!empty($objMdPetIntegracao->getStrCodReceitaSuspAuto()) && in_array(intval($consulta['PessoaJuridica']['situacaoCadastral']['codigo']), explode(',', $objMdPetIntegracao->getStrCodReceitaSuspAuto()))) {
+        if ($consulta['CNPJPerfil']['SituacaoCadastral'] == '03') {
             $xml .= "<msg>O cadastro do CNPJ indicado está suspenso na Receita Federal. Dessa forma, não pode ser efetivada a vinculação do Responsável Legal à Pessoa Jurídica.</msg>\n";
             $xml .= '</dados-pj>';
             return $xml;
         }
 
-        $cpfResponsavelLegalReceita = $consulta['PessoaJuridica']['responsavel']['cpf'];
+   //     $cpfResponsavelLegalReceita = $consulta['PessoaJuridica']['responsavel']['cpf'];
+    	$cpfResponsavelLegalReceita = $consulta['CNPJPerfil']['CPFResponsavel'];
 
         if (empty($cpfResponsavelLegalReceita)) {
             $xml .= "<success>false</success>\n";
@@ -314,17 +320,17 @@ class MdPetIntegracaoRN extends InfraRN
 //    $xml .= '<txtNumeroEndereco>'. $consulta['PessoaJuridica']['endereco']['numero'].'</txtNumeroEndereco>';
         } else {
 
-            $xml .= '<txtNomeFantasia>' . htmlspecialchars($consulta['PessoaJuridica']['nomeFantasia']) . '</txtNomeFantasia>';
+            $xml .= '<txtNomeFantasia>' . htmlspecialchars($consulta['CNPJPerfil']['NomeFantasia']) . '</txtNomeFantasia>';
             $xml .= '<txtNumeroCpfResponsavel>' . InfraUtil::formatarCpf($cpfResponsavelLegalReceita) . '</txtNumeroCpfResponsavel>';
-            $xml .= '<txtRazaoSocial>' . htmlspecialchars($consulta['PessoaJuridica']['nomeEmpresarial']) . '</txtRazaoSocial>';
-            $xml .= '<txtNomeResponsavelLegal>' . htmlspecialchars($consulta['PessoaJuridica']['responsavel']['nome']) . '</txtNomeResponsavelLegal>';
+            $xml .= '<txtRazaoSocial>' . htmlspecialchars($consulta['CNPJPerfil']['NomeEmpresarial']) . '</txtRazaoSocial>';
+            $xml .= '<txtNomeResponsavelLegal>' . htmlspecialchars($consulta['CNPJPerfil']['NomeResponsavel']) . '</txtNomeResponsavelLegal>';
             $xml .= '<slUf>' . $dadosCidade['idUF'] . '</slUf>';
             $xml .= '<selCidade>' . htmlspecialchars($dadosCidade['idCidade']) . '</selCidade>';
-            $xml .= '<txtNumeroCEP>' . MdPetDataUtils::formatCep($consulta['PessoaJuridica']['endereco']['cep']) . '</txtNumeroCEP>';
-            $xml .= '<txtLogradouro>' . htmlspecialchars($consulta['PessoaJuridica']['endereco']['logradouro']) . ', ' . $consulta['PessoaJuridica']['endereco']['numero'] . ' ' . htmlspecialchars($consulta['PessoaJuridica']['endereco']['complemento']) . '</txtLogradouro>';
+            $xml .= '<txtNumeroCEP>' . MdPetDataUtils::formatCep($consulta['CNPJPerfil']['CEP']) . '</txtNumeroCEP>';
+            $xml .= '<txtLogradouro>' . htmlspecialchars($consulta['CNPJPerfil']['Logradouro']) . ', ' . $consulta['CNPJPerfil']['NumeroLogradouro'] . ' ' . htmlspecialchars($consulta['CNPJPerfil']['Complemento']) . '</txtLogradouro>';
 //    $xml .= '<txtNumeroEndereco>'. $consulta['PessoaJuridica']['endereco']['numero'].'</txtNumeroEndereco>';
-            $xml .= '<txtComplementoEndereco>' . htmlspecialchars($consulta['PessoaJuridica']['endereco']['complemento']) . '</txtComplementoEndereco>';
-            $xml .= '<txtBairro>' . htmlspecialchars($consulta['PessoaJuridica']['endereco']['bairro']) . '</txtBairro>';
+            $xml .= '<txtComplementoEndereco>' . htmlspecialchars($consulta['CNPJPerfil']['Complemento']) . '</txtComplementoEndereco>';
+            $xml .= '<txtBairro>' . htmlspecialchars($consulta['CNPJPerfil']['Bairro']) . '</txtBairro>';
             $xml .= '<nomeCidade>' . htmlspecialchars($dadosCidade['nomeCidade']) . '</nomeCidade>';
         }
         $xml .= '</dados-pj>';
